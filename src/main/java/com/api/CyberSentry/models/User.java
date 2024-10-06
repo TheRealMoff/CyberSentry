@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 public class User {
 
     @Id
-    @JsonProperty(value = "Username")
+    @JsonProperty(value = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -23,6 +23,15 @@ public class User {
     @JsonProperty(value = "Password")
     @Column(nullable = false)
     private String password;
+
+    public User() {
+    }
+
+    public User(String email, String username, String password) {
+        this.email = email;
+        this.username = username;
+        this.password = password;
+    }
 
     public User(Long id,
                 String email,
