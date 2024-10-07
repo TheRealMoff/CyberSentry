@@ -52,6 +52,7 @@ public class IncidentController {
     }
 
     //Update Incident
+    @PutMapping(path = "/incidents/{id}")
     public ResponseEntity<Incident> updateIncident(@PathVariable Long id,
                                                    @RequestBody Incident incident){
         Optional<Incident> updatedIncidentOptional = incidentService.updateIncident(id,incident);
@@ -60,6 +61,7 @@ public class IncidentController {
     }
 
     //Delete an incident
+    @DeleteMapping(value = "/incidents/{id}")
     public ResponseEntity<String> deleteIncident(@PathVariable Long id){
         boolean deleteStatus = incidentService.deleteIncident(id);
         if (deleteStatus){
