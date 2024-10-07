@@ -28,7 +28,7 @@ public class Incident {
     private String status;
 
     @ManyToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "assignee_id", referencedColumnName = "id")
     private User assignee;
 
     public Incident() {
