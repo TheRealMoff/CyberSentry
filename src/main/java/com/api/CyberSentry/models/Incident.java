@@ -24,7 +24,7 @@ public class Incident {
     @JsonProperty(value = "Priority")
     private String priority;
 
-    @JsonProperty(value = "status")
+    @JsonProperty(value = "Status")
     private String status;
 
     @ManyToOne
@@ -118,6 +118,11 @@ public class Incident {
 
     public void setAssignee(User assignee) {
         this.assignee = assignee;
+    }
+
+    // Method to get username from associated User
+    public String getUsername() {
+        return assignee != null ? assignee.getUsername() : null;
     }
 
     @Override
