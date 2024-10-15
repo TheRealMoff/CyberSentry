@@ -1,5 +1,6 @@
 package com.api.CyberSentry.controller;
 
+import com.api.CyberSentry.dto.IncidentDTO;
 import com.api.CyberSentry.models.Incident;
 import com.api.CyberSentry.service.IncidentService;
 import org.springframework.http.HttpStatus;
@@ -19,23 +20,40 @@ public class IncidentController {
         this.incidentService = incidentService;
     }
 
-    //Create a new incident
-    @PostMapping("/addIncident")
-    public ResponseEntity<Incident> addIncident(@RequestBody Incident incident){
-        Incident savedIncident = incidentService.addIncident(incident);
-        return ResponseEntity.ok(savedIncident);
+    //Retrieve all incidents
+    @GetMapping("/incidents")
+    public List<IncidentDTO> getAllIncidents() {
+        return incidentService.getAllIncidents();
     }
 
-    //Retrieve a single incident
-    @GetMapping("/incidents/{title}")
-    public ResponseEntity<Incident> getIncidentByTitle(@PathVariable String title){
-        Optional<Incident> incidentOptional = incidentService.getIncidentByTitle(title);
-        return incidentOptional.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    //Retrieve incident by id
+    @GetMapping("/incidents/{id}")
+    public ResponseEntity<IncidentDTO> getIncidentById(@PathVariable Long id) {
+        IncidentDTO incident = incidentService.getIncidentById(id);
+
+        if (incident != null) {
+            return ResponseEntity.ok(incident);
+
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    //Create a new incident
+    @PostMapping("/add")
+    public ResponseEntity<IncidentDTO> createIncident(@RequestBody IncidentDTO incidentDto) {
+        try {
+            IncidentDTO createdIncident = incidentService.createIncident(incidentDto);
+            return ResponseEntity.ok(createdIncident);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
     /*
     To add more retrieval end points as the project grows i.e. integration of front end
 
+    - /incidents/{title}
     - /incidents/{description}
     - /incidents/{affectedSystem}
     - /incidents/{priority}
@@ -44,20 +62,22 @@ public class IncidentController {
 
      */
 
-    //Retrieve all incidents
-    @GetMapping("/incidents")
-    public ResponseEntity<List<Incident>> getAllIncidents(){
-        List<Incident> incidents = incidentService.getAllIncidents();
-        return ResponseEntity.ok(incidents);
-    }
-
     //Update Incident
     @PutMapping(path = "/incidents/{id}")
-    public ResponseEntity<Incident> updateIncident(@PathVariable Long id,
-                                                   @RequestBody Incident incident){
-        Optional<Incident> updatedIncidentOptional = incidentService.updateIncident(id,incident);
-        return updatedIncidentOptional.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<IncidentDTO> updateIncident(@PathVariable Long id,
+                                                      @RequestBody IncidentDTO incidentDto) {
+
+        try {
+            IncidentDTO updatedIncident = incidentService.updateIncident(id, incidentDto);
+            if (updatedIncident != null) {
+                return ResponseEntity.ok(updatedIncident);
+
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     //Delete an incident
@@ -65,7 +85,7 @@ public class IncidentController {
     public ResponseEntity<String> deleteIncident(@PathVariable Long id){
         boolean deleteStatus = incidentService.deleteIncident(id);
         if (deleteStatus){
-            return ResponseEntity.ok("Incident of id " + id + "has been successfully deleted");
+            return ResponseEntity.ok("Incident of id " + id + " has been successfully deleted");
         }
         else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
