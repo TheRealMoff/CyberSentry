@@ -27,17 +27,17 @@ public class User {
     public User() {
     }
 
-    public User(String email, String username, String password) {
-        this.email = email;
-        this.username = username;
-        this.password = password;
-    }
-
     public User(Long id,
                 String email,
                 String username,
                 String password) {
         this.id = id;
+        this.email = email;
+        this.username = username;
+        this.password = password;
+    }
+
+    public User(String email, String username, String password) {
         this.email = email;
         this.username = username;
         this.password = password;
