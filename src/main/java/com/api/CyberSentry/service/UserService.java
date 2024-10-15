@@ -1,84 +1,100 @@
 package com.api.CyberSentry.service;
 
+import com.api.CyberSentry.dto.UserDTO;
 import com.api.CyberSentry.models.User;
 import com.api.CyberSentry.repository.UserRepository;
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
-    public UserService(UserRepository userRepository) {
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+    public UserService(UserRepository userRepository, ModelMapper modelMapper) {
         this.userRepository = userRepository;
-    }
-
-    //Saving a user in the database
-    public User createUser(User user){
-        try {
-            return userRepository.save(user);
-        }
-        catch (Exception e){
-            //Catch and log the error
-            throw new RuntimeException("Failed to create new user " + e.getMessage());
-        }
+        this.modelMapper = modelMapper;
     }
 
     //Get all users from database
-    public List<User> getAllUsers(){
+    public List<UserDTO> getAllUsers(){
         try {
-            return userRepository.findAll();
-        }
-        //Catch and log the error
-        catch (Exception e){
+            return userRepository.findAll().stream()
+                    .map(user -> modelMapper.map(user, UserDTO.class))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
             throw new RuntimeException("Failed to get all users " + e.getMessage());
         }
     }
 
-    //Get a single user from database
-    public Optional<User> getUserByUsername(String username){
-        try {
-            return getAllUsers()
-                    .stream()
-                    .filter(User -> username.equals(User.getUsername()))
-                    .findFirst();
+    //Get user by id
+    public UserDTO getUserById(Long id) {
+            User user = userRepository.findById(id).orElse(null);
+            return user != null ? modelMapper.map(user, UserDTO.class) : null;
+    }
+
+    //Add a new user
+    public UserDTO createUser(UserDTO userDto) {
+        logger.info("Creating new user: {}", userDto);
+
+        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
         }
-        catch (Exception e){
-            throw new RuntimeException("User not found " + e.getMessage());
+        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+
+        User user = modelMapper.map(userDto, User.class);
+        user.setEmail(userDto.getEmail());
+        user.setUsername(userDto.getUsername());
+        user.setPassword(userDto.getPassword());
+
+        User savedUser = userRepository.save(user);
+        return modelMapper.map(savedUser, UserDTO.class);
+    }
+
+    //Get a single user from database
+    public User getUserByUsername(String username) {
+        try {
+            return userRepository.findByUsername(username);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get user " + username + e.getMessage());
         }
     }
 
     //Update user details
-    public Optional<User> updateUser(Long id, User updatedUser){
-        try {
-            Optional<User> existingUser = userRepository.findById(id);
-            if (existingUser.isPresent()) {
-                User existingUser1 = existingUser.get();
-                existingUser1.setEmail(updatedUser.getEmail());
-                existingUser1.setPassword(updatedUser.getPassword());
-                User savedUser = userRepository.save(existingUser1);
-                return Optional.of(savedUser);
-            }
-            else {
-                return Optional.empty();
-            }
+    public UserDTO updateUser(Long id, UserDTO userDto) {
+        User existingUser = userRepository.findById(id).orElse(null);
+        if (existingUser == null) {
+            return null;
         }
-        catch (Exception e){
-            throw new RuntimeException("Failed to update user " + e.getMessage());
-        }
+        existingUser.setEmail(userDto.getEmail());
+        existingUser.setUsername(userDto.getUsername());
+        existingUser.setPassword(userDto.getPassword());
+
+        User updatedUser = userRepository.save(existingUser);
+        return modelMapper.map(updatedUser, UserDTO.class);
     }
 
     //Deleting a user
-    public boolean deleteUser(Long id){
-        try {
+    public boolean deleteUser(Long id) {
+
+        if (userRepository.existsById(id)) {
+
             userRepository.deleteById(id);
-            return true; //If successful
+            return true;
         }
-        catch (Exception e){
-            throw new RuntimeException("Failed to delete " + e.getMessage());
-        }
+        return false;
     }
 }
