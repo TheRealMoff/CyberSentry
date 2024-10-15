@@ -1,98 +1,107 @@
 package com.api.CyberSentry.service;
 
+import com.api.CyberSentry.dto.IncidentDTO;
 import com.api.CyberSentry.models.Incident;
 import com.api.CyberSentry.models.User;
 import com.api.CyberSentry.repository.IncidentRepository;
 import com.api.CyberSentry.repository.UserRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
+    private final ModelMapper modelMapper;
 
-    public IncidentService(IncidentRepository incidentRepository, UserRepository userRepository) {
+    public IncidentService(IncidentRepository incidentRepository,
+                           UserService userService,
+                           ModelMapper modelMapper) {
+        
         this.incidentRepository = incidentRepository;
-        this.userRepository = userRepository;
-    }
-
-    //Adding a new incident
-    public Incident addIncident(Incident incident){
-        User incidentAssignee = userRepository.findByUsername(incident.getAssignee().getUsername());
-
-        if (incidentAssignee != null) {
-            incident.setAssignee(incidentAssignee);
-            try {
-                return incidentRepository.save(incident);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to add new incident " + e.getMessage());
-            }
-        } else {
-            throw new UsernameNotFoundException("Username " + incident.getAssignee().getUsername() + "not found");
-        }
+        this.userService = userService;
+        this.modelMapper = modelMapper;
     }
 
     //Get all incidents
-    public List<Incident> getAllIncidents(){
-        try {
-            return incidentRepository.findAll();
-        }
-        catch (Exception e){
-            throw new RuntimeException("Cannot retrieve all incidents " + e.getMessage());
-        }
+    public List<IncidentDTO> getAllIncidents() {
+        return incidentRepository.findAll().stream()
+                .map(incident -> modelMapper.map(incident, IncidentDTO.class))
+                .collect(Collectors.toList());
     }
 
-    //Get a specific incident
-    public Optional<Incident> getIncidentByTitle(String title){
-        try{
-            return getAllIncidents()
-                    .stream()
-                    .filter(Incident -> title.equals(Incident.getTitle()))
-                    .findFirst();
-        }
-        catch (Exception e){
-            throw new RuntimeException("Incident " + e.getMessage() + "not found");
-        }
+    //Get incident by id
+    public IncidentDTO getIncidentById(Long id) {
+        Incident incident = incidentRepository.findById(id).orElse(null);
+        return incident != null ? modelMapper.map(incident, IncidentDTO.class) : null;
     }
+
+    //Create a new incident
+    public IncidentDTO createIncident(IncidentDTO incidentDto) {
+        User user = userService.getUserByUsername(incidentDto.getUsername());
+
+        if (user == null) {
+            throw new RuntimeException("User not found ");
+        }
+
+        Incident incident = modelMapper.map(incidentDto, Incident.class);
+
+        incident.setTitle(incidentDto.getTitle());
+        incident.setDescription(incidentDto.getDescription());
+        incident.setAffectedSystems(incidentDto.getAffectedSystems());
+        incident.setPriority(incidentDto.getPriority());
+        incident.setStatus(incidentDto.getStatus());
+        incident.setAssignee(user);
+
+        Incident savedIncident = incidentRepository.save(incident);
+        return modelMapper.map(savedIncident, IncidentDTO.class);
+    }
+
+    //Get a specific incident by Title
+    //To be added*****
+//    public Incident getIncidentByTitle(String title){
+//        try {
+//            return incidentRepository.findBy();
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to get user " + username + e.getMessage());
+//        }
+//    }
 
     //Update incident
-    public Optional<Incident> updateIncident(Long id, Incident incidentBeingUpdated){
-        try{
-            Optional<Incident> existingIncident = incidentRepository.findById(id);
-            if (existingIncident.isPresent()){
-                Incident existingIncident1 = existingIncident.get();
-                existingIncident1.setTitle(incidentBeingUpdated.getTitle());
-                existingIncident1.setDescription(incidentBeingUpdated.getDescription());
-                existingIncident1.setAffectedSystems(incidentBeingUpdated.getAffectedSystems());
-                existingIncident1.setPriority(incidentBeingUpdated.getPriority());
-                existingIncident1.setStatus(incidentBeingUpdated.getStatus());
-                existingIncident1.setAssignee(incidentBeingUpdated.getAssignee());
+    public IncidentDTO updateIncident(Long id, IncidentDTO incidentDto) {
 
-                Incident savedIncident = incidentRepository.save(incidentBeingUpdated);
-                return Optional.of(savedIncident);
-            }
-            else {
-                return Optional.empty();
-            }
+        Incident existingIncident = incidentRepository.findById(id).orElse(null);
+        if (existingIncident == null) {
+            return null;
         }
-        catch (Exception e){
-            throw new RuntimeException("Failed to update incident " + e.getMessage());
+        User user = userService.getUserByUsername(incidentDto.getUsername());
+        if (user == null) {
+            throw new RuntimeException("User not found");
         }
+        existingIncident.setTitle(incidentDto.getTitle());
+        existingIncident.setDescription(incidentDto.getDescription());
+        existingIncident.setAffectedSystems(incidentDto.getAffectedSystems());
+        existingIncident.setPriority(incidentDto.getPriority());
+        existingIncident.setStatus(incidentDto.getStatus());
+        existingIncident.setAssignee(user);
+
+        Incident updatedIncident = incidentRepository.save(existingIncident);
+        return modelMapper.map(updatedIncident, IncidentDTO.class);
     }
 
     //Delete Incident
-    public boolean deleteIncident(Long id){
-        try {
+    public boolean deleteIncident(Long id) {
+
+        if (incidentRepository.existsById(id)) {
             incidentRepository.deleteById(id);
-            return true; //if successul
+            return true;
         }
-        catch (Exception e){
-            throw new RuntimeException("Failed to delete incident " + e.getMessage() + id);
-        }
+        return false;
     }
 }
