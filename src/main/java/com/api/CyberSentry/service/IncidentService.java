@@ -4,13 +4,10 @@ import com.api.CyberSentry.dto.IncidentDTO;
 import com.api.CyberSentry.models.Incident;
 import com.api.CyberSentry.models.User;
 import com.api.CyberSentry.repository.IncidentRepository;
-import com.api.CyberSentry.repository.UserRepository;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +20,7 @@ public class IncidentService {
     public IncidentService(IncidentRepository incidentRepository,
                            UserService userService,
                            ModelMapper modelMapper) {
-        
+
         this.incidentRepository = incidentRepository;
         this.userService = userService;
         this.modelMapper = modelMapper;
