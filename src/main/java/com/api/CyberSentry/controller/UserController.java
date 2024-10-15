@@ -1,63 +1,80 @@
 package com.api.CyberSentry.controller;
 
-import com.api.CyberSentry.models.User;
+import com.api.CyberSentry.dto.UserDTO;
 import com.api.CyberSentry.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class UserController {
 
     private final UserService userService;
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
-    //Create a new user
-    @PostMapping("/register")
-    public ResponseEntity<User> addUser(@RequestBody User user){
-        User savedUser = userService.createUser(user);
-        return ResponseEntity.ok(savedUser);
-    }
-
     //Retrieve all users
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsers(){
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public List<UserDTO> getAllUsers() {
+        return userService.getAllUsers();
     }
 
-    //Retrieve single user by username
-    @GetMapping("/users/{username}")
-    public ResponseEntity<User> getUserById(@PathVariable String username){
-        Optional<User> userOptional = userService.getUserByUsername(username);
-        return userOptional.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    //Create a new user
+    @PostMapping("/users/addUser")
+    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO createdUser = userService.createUser(userDTO);
+            return ResponseEntity.ok(createdUser);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    //Retrieve user by id
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+
+        UserDTO user = userService.getUserById(id);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     //Update a user
     @PutMapping(path = "/users/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user){
-        Optional<User> updatedUserOptional = userService.updateUser(id, user);
-        return updatedUserOptional.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDto) {
+
+        UserDTO updatedUser = userService.updateUser(id, userDto);
+        if (updatedUser != null) {
+            return ResponseEntity.ok(updatedUser);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     //Delete a user
     @DeleteMapping(value = "/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id){
+
         boolean deleteStatus = userService.deleteUser(id);
         if (deleteStatus) {
             return ResponseEntity.ok("User with id " + id + " has been deleted successfully");
         }
         else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete user with ID " + id);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to delete user with ID " + id);
         }
     }
 
