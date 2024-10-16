@@ -26,6 +26,18 @@ public class IncidentController {
         return incidentService.getAllIncidents();
     }
 
+    //Create a new incident
+    @PostMapping("/add")
+    public ResponseEntity<IncidentDTO> createIncident(@RequestBody IncidentDTO incidentDto) {
+        try {
+            IncidentDTO createdIncident = incidentService.createIncident(incidentDto);
+            return ResponseEntity.ok(createdIncident);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     //Retrieve incident by id
     @GetMapping("/incidents/{id}")
     public ResponseEntity<IncidentDTO> getIncidentById(@PathVariable Long id) {
@@ -39,24 +51,46 @@ public class IncidentController {
         }
     }
 
-    //Create a new incident
-    @PostMapping("/add")
-    public ResponseEntity<IncidentDTO> createIncident(@RequestBody IncidentDTO incidentDto) {
-        try {
-            IncidentDTO createdIncident = incidentService.createIncident(incidentDto);
-            return ResponseEntity.ok(createdIncident);
+    //Get incident by priority
+    @GetMapping("/incidents/filter/{priority}")
+    public  ResponseEntity<List<IncidentDTO>> getIncidentByPriority(@PathVariable String priority){
+        List<IncidentDTO> incidents = incidentService.getIncidentsByPriority(priority);
 
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        if (!incidents.isEmpty()){
+            return ResponseEntity.ok(incidents);
+        }
+        else {
+            return ResponseEntity.notFound().build();
         }
     }
+
+    //Get incident by status
+    @GetMapping("/incidents/filter/status/{status}")
+    public ResponseEntity<List<IncidentDTO>> getIncidentsByStatus(@PathVariable String status){
+        List<IncidentDTO> incidents = incidentService.getIncidentsByStatus(status);
+
+        if (!incidents.isEmpty()){
+            return ResponseEntity.ok(incidents);
+        }
+        else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    //Get incident by assigned user
+    @GetMapping("/incidents/filter/username/{username}")
+    public ResponseEntity<List<IncidentDTO>> getIncidentsByUsername(@PathVariable String username) {
+        List<IncidentDTO> incidents = incidentService.getIncidentsByUsername(username);
+        if (!incidents.isEmpty()) {
+            return ResponseEntity.ok(incidents);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     /*
     To add more retrieval end points as the project grows i.e. integration of front end
 
-    - /incidents/{title}
-    - /incidents/{description}
-    - /incidents/{affectedSystem}
-    - /incidents/{priority}
     - /incidents/{status}
     - /incidents/{assignedTo}
 
