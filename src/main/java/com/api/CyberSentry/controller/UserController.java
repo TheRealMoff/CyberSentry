@@ -29,10 +29,21 @@ public class UserController {
     }
 
     //Create a new user
-    @PostMapping("/users/addUser")
+    @PostMapping("/register")
     public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
         try {
-            UserDTO createdUser = userService.createUser(userDTO);
+            UserDTO createdUser = userService.createUser(userDTO, false);
+            return ResponseEntity.ok(createdUser);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/admin/users/register")
+    public ResponseEntity<UserDTO> createUserByAdmin(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO createdUser = userService.createUser(userDTO, true);
             return ResponseEntity.ok(createdUser);
 
         } catch (RuntimeException e) {
