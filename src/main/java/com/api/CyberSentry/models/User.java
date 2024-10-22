@@ -3,6 +3,9 @@ package com.api.CyberSentry.models;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -24,23 +27,28 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
+
     public User() {
     }
 
-    public User(Long id,
-                String email,
-                String username,
-                String password) {
+    public User(Long id, String email, String username, String password, Set<Role> roles) {
         this.id = id;
         this.email = email;
         this.username = username;
         this.password = password;
+        this.roles = roles;
     }
 
-    public User(String email, String username, String password) {
+    public User(String email, String username, String password, Set<Role> roles) {
         this.email = email;
         this.username = username;
         this.password = password;
+        this.roles = roles;
     }
 
     public Long getId() {
@@ -75,6 +83,14 @@ public class User {
         this.password = password;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -82,6 +98,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
+                ", roles=" + roles +
                 '}';
     }
 }
