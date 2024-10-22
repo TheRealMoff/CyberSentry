@@ -1,26 +1,34 @@
 package com.api.CyberSentry.dto;
 
+import com.api.CyberSentry.models.Role;
+
+import java.util.HashSet;
+import java.util.Set;
+
 public class UserDTO {
 
     private Long id;
     private String email;
     private String username;
     private String password;
+    private Set<Role> roles = new HashSet<>();
 
     public UserDTO() {
     }
 
-    public UserDTO(Long id, String email, String username, String password) {
+    public UserDTO(Long id, String email, String username, String password, Set<Role> roles) {
         this.id = id;
         this.email = email;
         this.username = username;
         this.password = password;
+        this.roles = roles;
     }
 
-    public UserDTO(String email, String username, String password) {
+    public UserDTO(String email, String username, String password, Set<Role> roles) {
         this.email = email;
         this.username = username;
         this.password = password;
+        this.roles = roles;
     }
 
     public Long getId() {
@@ -55,13 +63,22 @@ public class UserDTO {
         this.password = password;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
     @Override
     public String toString() {
-        return "UserDTO{" +
+        return "User{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
+                ", roles=" + roles +
                 '}';
     }
 }
