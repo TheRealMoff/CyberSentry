@@ -1,27 +1,34 @@
 package com.api.CyberSentry.service;
 
 import com.api.CyberSentry.dto.UserDTO;
+import com.api.CyberSentry.models.Role;
 import com.api.CyberSentry.models.User;
+import com.api.CyberSentry.repository.RoleRepository;
 import com.api.CyberSentry.repository.UserRepository;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.api.CyberSentry.enums.ApiUserRole.*;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-
-    public UserService(UserRepository userRepository, ModelMapper modelMapper) {
+    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
     }
 
     //Get all users from database
@@ -42,24 +49,23 @@ public class UserService {
     }
 
     //Add a new user
-    public UserDTO createUser(UserDTO userDto) {
-        logger.info("Creating new user: {}", userDto);
-
-        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be empty");
-        }
-        if (userDto.getUsername() == null || userDto.getUsername().trim().isEmpty()) {
-            throw new IllegalArgumentException("Username cannot be empty");
-        }
-        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be empty");
-        }
+    public UserDTO createUser(UserDTO userDto, Boolean isAdmin) {
 
         User user = modelMapper.map(userDto, User.class);
-        user.setEmail(userDto.getEmail());
-        user.setUsername(userDto.getUsername());
-        user.setPassword(userDto.getPassword());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
+        Set<Role> roles = new HashSet<>();
+
+        if (isAdmin && userDto.getRoles() != null && !userDto.getRoles().isEmpty()){
+            roles.addAll(userDto.getRoles());
+        }
+        else {
+            Role userRole = roleRepository.findByRole(USER)
+                    .orElseThrow(() -> new RuntimeException("Error role not found"));
+            roles.add(userRole);
+        }
+        
+        user.setRoles(roles);
         User savedUser = userRepository.save(user);
         return modelMapper.map(savedUser, UserDTO.class);
     }
@@ -81,7 +87,7 @@ public class UserService {
         }
         existingUser.setEmail(userDto.getEmail());
         existingUser.setUsername(userDto.getUsername());
-        existingUser.setPassword(userDto.getPassword());
+        existingUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
         User updatedUser = userRepository.save(existingUser);
         return modelMapper.map(updatedUser, UserDTO.class);
