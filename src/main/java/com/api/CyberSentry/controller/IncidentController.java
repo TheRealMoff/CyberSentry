@@ -27,7 +27,7 @@ public class IncidentController {
     }
 
     //Create a new incident
-    @PostMapping("/add")
+    @PostMapping("/incidents/add")
     public ResponseEntity<IncidentDTO> createIncident(@RequestBody IncidentDTO incidentDto) {
         try {
             IncidentDTO createdIncident = incidentService.createIncident(incidentDto);
@@ -87,14 +87,6 @@ public class IncidentController {
             return ResponseEntity.notFound().build();
         }
     }
-
-    /*
-    To add more retrieval end points as the project grows i.e. integration of front end
-
-    - /incidents/{status}
-    - /incidents/{assignedTo}
-
-     */
 
     //Update Incident
     @PutMapping(path = "/incidents/{id}")
